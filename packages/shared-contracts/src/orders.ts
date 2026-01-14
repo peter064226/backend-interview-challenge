@@ -1,0 +1,39 @@
+/**
+ * Order types shared across applications.
+ */
+
+export enum OrderStatus {
+    PENDING = 'PENDING',
+    PROCESSING = 'PROCESSING',
+    COMPLETED = 'COMPLETED',
+    CANCELLED = 'CANCELLED',
+}
+
+export interface OrderItem {
+    productId: string;
+    productName: string;
+    quantity: number;
+    unitPrice: number;
+}
+
+export interface Order {
+    orderId: string;
+    customerId: string;
+    items: OrderItem[];
+    totalAmount: number;
+    status: OrderStatus;
+    createdAt: string;
+    updatedAt: string;
+}
+
+/**
+ * TASK FOR CANDIDATE:
+ * Add a Notification interface with the following fields:
+ * - notificationId: string
+ * - orderId: string
+ * - message: string
+ * - channel: 'EMAIL' | 'SMS' | 'PUSH'
+ * - status: 'PENDING' | 'SENT' | 'FAILED'
+ * - createdAt: string
+ * - sentAt?: string
+ */

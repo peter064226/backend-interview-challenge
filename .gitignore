@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+.npm
+
+# Build outputs
+dist/
+build/
+*.js.map
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.local.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Test
+coverage/
+.nyc_output/
+
+# LocalStack data
+.localstack/
+volume/

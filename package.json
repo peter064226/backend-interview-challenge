@@ -1,0 +1,25 @@
+{
+    "name": "backend-interview-challenge",
+    "version": "1.0.0",
+    "private": true,
+    "description": "Backend Engineer Interview Challenge - Monorepo with Lambda + LocalStack",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "build": "npm run build --workspaces --if-present",
+        "test": "npm run test --workspaces --if-present",
+        "lint": "npm run lint --workspaces --if-present",
+        "clean": "npm run clean --workspaces --if-present && rm -rf node_modules",
+        "local": "./scripts/local-all.sh",
+        "dev": "echo '⚠️  Use [npm run local] for local development.' && exit 1"
+    },
+    "devDependencies": {
+        "@types/node": "^20.10.0",
+        "typescript": "^5.3.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}
