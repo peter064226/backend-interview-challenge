@@ -14,6 +14,7 @@ export STAGE
 COLOR_RESET='\033[0m'
 COLOR_API='\033[36m'       # Cyan
 COLOR_WORKER='\033[35m'    # Magenta
+COLOR_NOTIFICATION='\033[34m' # Blue
 COLOR_LOCALSTACK='\033[33m' # Yellow
 COLOR_SUCCESS='\033[32m'   # Green
 COLOR_ERROR='\033[31m'     # Red
@@ -45,6 +46,7 @@ echo "🧹 [2/6] Cleaning up old processes..."
 set +e
 pkill -f "api-gateway.*main.ts" 2>/dev/null
 pkill -f "order-worker.*main.ts" 2>/dev/null
+pkill -f "notification-worker.*main.ts" 2>/dev/null
 
 # Release common ports
 if command -v lsof >/dev/null 2>&1; then
@@ -65,6 +67,7 @@ echo ""
 echo "🗑️  [3/6] Cleaning up old logs..."
 rm -f "$LOGS_DIR/api-gateway.log"
 rm -f "$LOGS_DIR/order-worker.log"
+rm -f "$LOGS_DIR/notification-worker.log"
 echo -e "${COLOR_SUCCESS}✅ Logs cleaned${COLOR_RESET}"
 
 # ✅ 4. Start LocalStack
@@ -133,6 +136,18 @@ echo "   🔄 Starting Order Worker..."
     | prefix_logs "$COLOR_WORKER" "WORKER"
 ) & PID_WORKER=$!
 
+# Wait for workers to start
+sleep 3
+
+# Start Notification Worker
+echo "   📧 Starting Notification Worker..."
+(
+  cd "$PROJECT_ROOT/apps/notification-worker"
+  npm run dev 2>&1 \
+    | tee "$LOGS_DIR/notification-worker.log" \
+    | prefix_logs "$COLOR_NOTIFICATION" "NOTIFY"
+) & PID_NOTIFICATION=$!
+
 # Wait for services to start
 sleep 5
 
@@ -144,11 +159,13 @@ echo ""
 echo "📊 Service Status:"
 echo "   🔵 API Gateway            http://localhost:3000 (PID: $PID_API)"
 echo "   🔄 Order Worker           Running (PID: $PID_WORKER)"
+echo "   📧 Notification Worker    Running (PID: $PID_NOTIFICATION)"
 echo "   🟡 LocalStack             http://localhost:4566"
 echo ""
 echo "📝 Log files:"
 echo "   $LOGS_DIR/api-gateway.log"
 echo "   $LOGS_DIR/order-worker.log"
+echo "   $LOGS_DIR/notification-worker.log"
 echo ""
 echo "🔍 View logs in real-time:"
 echo "   tail -f $LOGS_DIR/*.log"
@@ -158,7 +175,7 @@ echo "   curl http://localhost:3000/health"
 echo "   curl -X POST http://localhost:3000/api/orders -H 'Content-Type: application/json' -d '{\"customerId\":\"cust-123\",\"items\":[{\"productId\":\"prod-1\",\"productName\":\"Test Product\",\"quantity\":2,\"unitPrice\":29.99}],\"totalAmount\":59.98}'"
 echo ""
 echo "🛑 Stop all services:"
-echo "   kill $PID_API $PID_WORKER && docker compose down"
+echo "   kill $PID_API $PID_WORKER $PID_NOTIFICATION && docker compose down"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
@@ -172,12 +189,12 @@ cleanup() {
   CLEANED_UP=1
   echo ""
   echo "🛑 Stopping all services..."
-  kill $PID_API $PID_WORKER 2>/dev/null || true
+  kill $PID_API $PID_WORKER $PID_NOTIFICATION 2>/dev/null || true
   cd "$PROJECT_ROOT" && docker compose down
 }
 trap 'cleanup; exit 0' INT TERM
 trap cleanup EXIT
 
 # Wait for all processes
-wait $PID_API $PID_WORKER
+wait $PID_API $PID_WORKER $PID_NOTIFICATION
 wait

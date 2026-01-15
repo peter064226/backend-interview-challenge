@@ -43,6 +43,19 @@ ORDER_QUEUE_URL=$(aws --endpoint-url "$AWS_ENDPOINT_URL" sqs get-queue-url \
 ORDER_QUEUE_ARN="arn:aws:sqs:${AWS_REGION}:${AWS_ACCOUNT_ID}:${ORDER_QUEUE_NAME}"
 echo "   ✅ Queue ready: $ORDER_QUEUE_URL"
 
+NOTIFICATION_QUEUE_NAME="${STAGE}-notification-queue"
+echo "📌 Creating SQS queue: $NOTIFICATION_QUEUE_NAME"
+set +e
+aws --endpoint-url "$AWS_ENDPOINT_URL" sqs create-queue \
+  --queue-name "$NOTIFICATION_QUEUE_NAME" \
+  --region "$AWS_REGION" >/dev/null 2>&1
+set -e
+NOTIFICATION_QUEUE_URL=$(aws --endpoint-url "$AWS_ENDPOINT_URL" sqs get-queue-url \
+  --queue-name "$NOTIFICATION_QUEUE_NAME" \
+  --query 'QueueUrl' --output text)
+NOTIFICATION_QUEUE_ARN="arn:aws:sqs:${AWS_REGION}:${AWS_ACCOUNT_ID}:${NOTIFICATION_QUEUE_NAME}"
+echo "   ✅ Queue ready: $NOTIFICATION_QUEUE_URL"
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 3. Create DynamoDB Tables
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -68,6 +81,17 @@ aws --endpoint-url "$AWS_ENDPOINT_URL" dynamodb create-table \
 set -e
 echo "   ✅ Table 'processed-orders' ready"
 
+echo "📌 Creating DynamoDB table: notifications"
+set +e
+aws --endpoint-url "$AWS_ENDPOINT_URL" dynamodb create-table \
+  --table-name notifications \
+  --attribute-definitions AttributeName=notificationId,AttributeType=S \
+  --key-schema AttributeName=notificationId,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST \
+  --region "$AWS_REGION" >/dev/null 2>&1
+set -e
+echo "   ✅ Table 'notifications' ready"
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # 4. Create EventBridge Rules
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -89,6 +113,24 @@ aws --endpoint-url "$AWS_ENDPOINT_URL" events put-targets \
 set -e
 echo "   ✅ Rule ready: OrderCreated → $ORDER_QUEUE_NAME"
 
+NOTIFICATION_RULE_NAME="${STAGE}-notification-requested-rule"
+echo "📌 Creating EventBridge rule: $NOTIFICATION_RULE_NAME"
+set +e
+aws --endpoint-url "$AWS_ENDPOINT_URL" events put-rule \
+  --name "$NOTIFICATION_RULE_NAME" \
+  --event-bus-name "$EVENT_BUS_NAME" \
+  --event-pattern '{"source":["notifications.service"],"detail-type":["NotificationRequested"]}' \
+  --state ENABLED \
+  --region "$AWS_REGION" >/dev/null 2>&1
+
+aws --endpoint-url "$AWS_ENDPOINT_URL" events put-targets \
+  --rule "$NOTIFICATION_RULE_NAME" \
+  --event-bus-name "$EVENT_BUS_NAME" \
+  --targets "Id=1,Arn=$NOTIFICATION_QUEUE_ARN" \
+  --region "$AWS_REGION" >/dev/null 2>&1
+set -e
+echo "   ✅ Rule ready: NotificationRequested → $NOTIFICATION_QUEUE_NAME"
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # Summary
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -99,9 +141,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 echo "📊 Resources:"
 echo "   EventBridge Bus: $EVENT_BUS_NAME"
-echo "   SQS Queue:       $ORDER_QUEUE_NAME"
-echo "   DynamoDB Tables: orders, processed-orders"
+echo "   SQS Queues:      $ORDER_QUEUE_NAME, $NOTIFICATION_QUEUE_NAME"
+echo "   DynamoDB Tables: orders, processed-orders, notifications"
 echo ""
 echo "📨 Message Flow:"
 echo "   API (OrderCreated) → EventBridge → SQS → Order Worker"
+echo "   API (NotificationRequested) → EventBridge → SQS → Notification Worker"
 echo ""
