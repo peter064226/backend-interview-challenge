@@ -31,6 +31,7 @@ export interface OrderProcessedEvent extends BaseEvent {
 export interface NotificationRequestedEvent extends BaseEvent {
     eventType: 'NotificationRequested';
     payload: {
+        notificationId: string;
         orderId: string;
         message: string;
         channel: 'EMAIL' | 'SMS' | 'PUSH';

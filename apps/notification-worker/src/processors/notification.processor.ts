@@ -2,7 +2,6 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { Logger } from '../utils/logger';
 import { MessageProcessor } from './processor.interface';
-import { randomUUID } from 'crypto';
 
 const NOTIFICATIONS_TABLE = 'notifications';
 
@@ -37,20 +36,20 @@ export class NotificationProcessor implements MessageProcessor {
      * Processes a NotificationRequested event.
      */
     async process(payload: Record<string, unknown>): Promise<void> {
+        const notificationId = payload.notificationId as string;
         const orderId = payload.orderId as string;
         const message = payload.message as string;
         const channel = payload.channel as string;
 
-        if (!orderId || !message || !channel) {
+        if (!notificationId || !orderId || !message || !channel) {
             this.logger.error('❌ Missing required fields in payload');
             return;
         }
 
-        this.logger.log(`📧 Processing notification for order: ${orderId}`);
-        this.logger.log(`   Channel: ${channel}`);
+        this.logger.log(`📧 Processing notification: ${notificationId}`);
+        this.logger.log(`   Order: ${orderId}, Channel: ${channel}`);
         this.logger.log(`   Message: ${message}`);
 
-        const notificationId = randomUUID();
         const now = new Date().toISOString();
 
         // Simulate sending notification

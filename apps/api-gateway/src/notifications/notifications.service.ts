@@ -24,16 +24,16 @@ export class NotificationsService {
      */
     async createNotification(dto: CreateNotificationDto): Promise<{ notificationId: string; status: string }> {
         const notificationId = randomUUID();
-        const now = new Date().toISOString();
-
+        
         this.logger.log(`📧 Creating notification request: ${notificationId}`);
         this.logger.log(`   Order: ${dto.orderId}, Channel: ${dto.channel}`);
 
-        // Publish event to EventBridge
+        // Publish event to EventBridge with notificationId
         await this.eventBridgeService.publishEvent({
             source: 'notifications.service',
             detailType: 'NotificationRequested',
             detail: {
+                notificationId,
                 orderId: dto.orderId,
                 message: dto.message,
                 channel: dto.channel,
