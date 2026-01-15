@@ -37,3 +37,25 @@ export interface Order {
  * - createdAt: string
  * - sentAt?: string
  */
+
+export enum NotificationChannel {
+    EMAIL = 'EMAIL',
+    SMS = 'SMS',
+    PUSH = 'PUSH',
+}
+
+export enum NotificationStatus {
+    PENDING = 'PENDING',
+    SENT = 'SENT',
+    FAILED = 'FAILED',
+}
+
+export interface Notification {
+    notificationId: string;
+    orderId: string;
+    message: string;
+    channel: NotificationChannel;
+    status: NotificationStatus;
+    createdAt: string;
+    sentAt?: string;
+}

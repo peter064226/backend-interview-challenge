@@ -28,13 +28,23 @@ export interface OrderProcessedEvent extends BaseEvent {
     };
 }
 
-/**
- * TASK FOR CANDIDATE:
- * Add a new event type for notifications.
- * NotificationSentEvent should include:
- * - notificationId: string
- * - orderId: string
- * - channel: 'EMAIL' | 'SMS' | 'PUSH'
- * - sentAt: string
- */
-export type DomainEvent = OrderCreatedEvent | OrderProcessedEvent;
+export interface NotificationRequestedEvent extends BaseEvent {
+    eventType: 'NotificationRequested';
+    payload: {
+        orderId: string;
+        message: string;
+        channel: 'EMAIL' | 'SMS' | 'PUSH';
+    };
+}
+
+export interface NotificationSentEvent extends BaseEvent {
+    eventType: 'NotificationSent';
+    payload: {
+        notificationId: string;
+        orderId: string;
+        channel: 'EMAIL' | 'SMS' | 'PUSH';
+        sentAt: string;
+    };
+}
+
+export type DomainEvent = OrderCreatedEvent | OrderProcessedEvent | NotificationRequestedEvent | NotificationSentEvent;
