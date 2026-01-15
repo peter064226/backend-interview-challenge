@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { HealthModule } from './health/health.module';
 import { OrdersModule } from './orders/orders.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { EventBridgeModule } from './shared/eventbridge/eventbridge.module';
 import { DynamoDBModule } from './shared/dynamodb/dynamodb.module';
 
@@ -16,6 +17,7 @@ import { DynamoDBModule } from './shared/dynamodb/dynamodb.module';
         // Feature modules
         HealthModule,
         OrdersModule,
+        NotificationsModule,
     ],
 })
 export class AppModule { }
