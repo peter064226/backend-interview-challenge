@@ -34,7 +34,10 @@ export class OrdersService {
         };
 
         // Save to DynamoDB
-        await this.dynamoDBService.putItem(ORDERS_TABLE, order);
+        await this.dynamoDBService.putItem(
+            ORDERS_TABLE,
+            JSON.parse(JSON.stringify(order)) as Record<string, unknown>
+        );
         this.logger.log(`✅ Order saved: ${order.orderId}`);
 
         // Publish event to EventBridge
